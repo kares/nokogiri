@@ -48,7 +48,6 @@ import nokogiri.XmlSyntaxError;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,7 +65,7 @@ import org.xml.sax.ext.DefaultHandler2;
  */
 public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
     Stack<StringBuffer> characterStack;
-    private final Ruby ruby;
+    private final Ruby runtime;
     private final RubyClass attrClass;
     private final IRubyObject object;
 
@@ -79,20 +78,19 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
     private final LinkedList<XmlSyntaxError> errors = new LinkedList<XmlSyntaxError>();
 
     private Locator locator;
-    private static String htmlParserName = "Nokogiri::HTML::SAX::Parser";
-    private boolean needEmptyAttrCheck = false;
+    private boolean needEmptyAttrCheck;
 
     public NokogiriHandler(Ruby runtime, IRubyObject object) {
-        this.ruby = runtime;
+        this.runtime = runtime;
         this.attrClass = (RubyClass) runtime.getClassFromPath("Nokogiri::XML::SAX::Parser::Attribute");
         this.object = object;
         String objectName = object.getMetaClass().getName();
-        if (htmlParserName.equals(objectName)) needEmptyAttrCheck = true;
+        if ("Nokogiri::HTML::SAX::Parser".equals(objectName)) needEmptyAttrCheck = true;
     }
 
     @Override
     public void skippedEntity(String skippedEntity) {
-        call("error", ruby.newString("Entity '" + skippedEntity + "' not defined\n"));
+        call("error", runtime.newString("Entity '" + skippedEntity + "' not defined\n"));
     }
 
     @Override
@@ -108,9 +106,9 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
 
     @Override
     public void xmlDecl(String version, String encoding, String standalone) {
-        call("xmldecl", stringOrNil(ruby, version),
-             stringOrNil(ruby, encoding),
-             stringOrNil(ruby, standalone));
+        call("xmldecl", stringOrNil(runtime, version),
+             stringOrNil(runtime, encoding),
+             stringOrNil(runtime, standalone));
     }
 
     @Override
@@ -119,7 +117,7 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
         if (!characterStack.empty()) {
             for (int i=0; i<characterStack.size(); i++) {
                 sb = characterStack.get(i);
-                call("characters", ruby.newString(sb.toString()));
+                call("characters", runtime.newString(sb.toString()));
             }
         }
         call("end_document");
@@ -127,7 +125,7 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
 
     @Override
     public void processingInstruction(String target, String data) {
-      call("processing_instruction", ruby.newString(target), ruby.newString(data));
+      call("processing_instruction", runtime.newString(target), runtime.newString(data));
     }
 
     /*
@@ -139,12 +137,14 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
      */
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
-        // for attributes other than namespace attrs
-        RubyArray rubyAttr = RubyArray.newArray(ruby);
-        // for namespace defining attributes
-        RubyArray rubyNSAttr = RubyArray.newArray(ruby);
+        final Ruby runtime = this.runtime;
+        final ThreadContext context = runtime.getCurrentContext();
 
-        ThreadContext context = ruby.getCurrentContext();
+        // for attributes other than namespace attrs
+        RubyArray rubyAttr = RubyArray.newArray(runtime);
+        // for namespace defining attributes
+        RubyArray rubyNSAttr = RubyArray.newArray(runtime);
+
         boolean fromFragmentHandler = false; // isFromFragmentHandler();
 
         for (int i = 0; i < attrs.getLength(); i++) {
@@ -161,40 +161,36 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
                 // I haven't figured the reason out yet, but, in somewhere,
                 // namespace is converted to array in array and cause
                 // TypeError at line 45 in fragment_handler.rb
-                RubyArray ns = RubyArray.newArray(ruby, 2);
                 if (ln.equals("xmlns")) ln = null;
-                ns.add(stringOrNil(ruby, ln));
-                ns.add(ruby.newString(val));
-                rubyNSAttr.add(ns);
+                rubyNSAttr.append( runtime.newArray( stringOrNil(runtime, ln), runtime.newString(val) ) );
             } else {
                 IRubyObject[] args = null;
                 if (needEmptyAttrCheck) {
                     if (isEmptyAttr(ln)) {
                         args = new IRubyObject[3];
-                        args[0] = stringOrNil(ruby, ln);
-                        args[1] = stringOrNil(ruby, pre);
-                        args[2] = stringOrNil(ruby, u);
+                        args[0] = stringOrNil(runtime, ln);
+                        args[1] = stringOrNil(runtime, pre);
+                        args[2] = stringOrNil(runtime, u);
                     }
                 } 
                 if (args == null) {
                     args = new IRubyObject[4];
-                    args[0] = stringOrNil(ruby, ln);
-                    args[1] = stringOrNil(ruby, pre);
-                    args[2] = stringOrNil(ruby, u);
-                    args[3] = stringOrNil(ruby, val);
+                    args[0] = stringOrNil(runtime, ln);
+                    args[1] = stringOrNil(runtime, pre);
+                    args[2] = stringOrNil(runtime, u);
+                    args[3] = stringOrNil(runtime, val);
                 }
 
-                IRubyObject attr = RuntimeHelpers.invoke(context, attrClass, "new", args);
-                rubyAttr.add(attr);
+                rubyAttr.append( RuntimeHelpers.invoke(context, attrClass, "new", args) );
             }
         }
 
         if (localName == null || localName.isEmpty()) localName = getLocalPart(qName);
         call("start_element_namespace",
-             stringOrNil(ruby, localName),
+             stringOrNil(runtime, localName),
              rubyAttr,
-             stringOrNil(ruby, getPrefix(qName)),
-             stringOrNil(ruby, uri),
+             stringOrNil(runtime, getPrefix(qName)),
+             stringOrNil(runtime, uri),
              rubyNSAttr);
         characterStack.push(new StringBuffer());
     }
@@ -225,11 +221,11 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         StringBuffer sb = characterStack.pop();
-        call("characters", ruby.newString(sb.toString()));
+        call("characters", runtime.newString(sb.toString()));
         call("end_element_namespace",
-             stringOrNil(ruby, localName),
-             stringOrNil(ruby, getPrefix(qName)),
-             stringOrNil(ruby, uri));
+             stringOrNil(runtime, localName),
+             stringOrNil(runtime, getPrefix(qName)),
+             stringOrNil(runtime, uri));
     }
 
     @Override
@@ -240,7 +236,7 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
 
     @Override
     public void comment(char[] ch, int start, int length) throws SAXException {
-        call("comment", ruby.newString(new String(ch, start, length)));
+        call("comment", runtime.newString(new String(ch, start, length)));
     }
 
     @Override
@@ -251,26 +247,27 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
     @Override
     public void endCDATA() throws SAXException {
         StringBuffer sb = characterStack.pop();
-        call("cdata_block", ruby.newString(sb.toString()));
+        call("cdata_block", runtime.newString(sb.toString()));
     }
 
     @Override
-    public void error(SAXParseException saxpe) {
-        addError(XmlSyntaxError.createError(ruby, saxpe));
-        call("error", ruby.newString(saxpe.getMessage()));
+    public void error(SAXParseException ex) {
+        addError( XmlSyntaxError.createError(runtime, ex) );
+        final String msg = ex.getMessage();
+        call("error", runtime.newString(msg == null ? "" : msg));
     }
 
     @Override
-    public void fatalError(SAXParseException saxpe) throws SAXException
-    {
-        addError(XmlSyntaxError.createFatalError(ruby, saxpe));
-        call("error", ruby.newString(saxpe.getMessage()));
+    public void fatalError(SAXParseException ex) throws SAXException {
+        addError( XmlSyntaxError.createFatalError(runtime, ex) );
+        final String msg = ex.getMessage();
+        call("error", runtime.newString(msg == null ? "" : msg));
     }
 
     @Override
-    public void warning(SAXParseException saxpe) {
-        //System.out.println("warning: " + saxpe);
-        call("warning", ruby.newString(saxpe.getMessage()));
+    public void warning(SAXParseException ex) {
+        final String msg = ex.getMessage();
+        call("warning", runtime.newString(msg == null ? "" : msg));
     }
 
     protected synchronized void addError(XmlSyntaxError e) {
@@ -286,48 +283,35 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
     }
 
     private void call(String methodName) {
-        ThreadContext context = ruby.getCurrentContext();
-        RuntimeHelpers.invoke(context, document(context), methodName);
+        ThreadContext context = runtime.getCurrentContext();
+        RuntimeHelpers.invoke(context, document(context.runtime), methodName);
     }
 
     private void call(String methodName, IRubyObject argument) {
-        ThreadContext context = ruby.getCurrentContext();
-        RuntimeHelpers.invoke(context, document(context), methodName, argument);
+        ThreadContext context = runtime.getCurrentContext();
+        RuntimeHelpers.invoke(context, document(context.runtime), methodName, argument);
     }
 
     private void call(String methodName, IRubyObject arg1, IRubyObject arg2) {
-        ThreadContext context = ruby.getCurrentContext();
-        RuntimeHelpers.invoke(context, document(context), methodName, arg1, arg2);
+        ThreadContext context = runtime.getCurrentContext();
+        RuntimeHelpers.invoke(context, document(context.runtime), methodName, arg1, arg2);
     }
 
-    private void call(String methodName, IRubyObject arg1, IRubyObject arg2,
-                      IRubyObject arg3) {
-        ThreadContext context = ruby.getCurrentContext();
-        RuntimeHelpers.invoke(context, document(context), methodName,
-                              arg1, arg2, arg3);
+    private void call(String methodName, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        ThreadContext context = runtime.getCurrentContext();
+        RuntimeHelpers.invoke(context, document(runtime), methodName, arg1, arg2, arg3);
     }
 
-    private void call(String methodName,
-                      IRubyObject arg0,
-                      IRubyObject arg1,
-                      IRubyObject arg2,
-                      IRubyObject arg3,
-                      IRubyObject arg4) {
-        IRubyObject[] args = new IRubyObject[5];
-        args[0] = arg0;
-        args[1] = arg1;
-        args[2] = arg2;
-        args[3] = arg3;
-        args[4] = arg4;
-        ThreadContext context = ruby.getCurrentContext();
-        RuntimeHelpers.invoke(context, document(context), methodName, args);
+    private void call(String methodName, IRubyObject... args) {
+        ThreadContext context = runtime.getCurrentContext();
+        RuntimeHelpers.invoke(context, document(runtime), methodName, args);
     }
 
-    private IRubyObject document(ThreadContext context) {
-        if (object instanceof RubyObject) {
-            return ((RubyObject)object).fastGetInstanceVariable("@document");
+    private IRubyObject document(final Ruby runtime) {
+        if (object != null) {
+            return object.getInstanceVariables().getInstanceVariable("@document");
         }
-        return context.getRuntime().getNil();
+        return runtime.getNil();
     }
 
 }
