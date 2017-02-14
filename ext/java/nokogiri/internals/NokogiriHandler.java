@@ -37,7 +37,10 @@ import static nokogiri.internals.NokogiriHelpers.getPrefix;
 import static nokogiri.internals.NokogiriHelpers.isNamespace;
 import static nokogiri.internals.NokogiriHelpers.stringOrNil;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.Stack;
 
 import nokogiri.XmlSyntaxError;
@@ -152,7 +155,7 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
             String pre;
 
             pre = getPrefix(qn);
-            if (ln == null || ln.equals("")) ln = getLocalPart(qn);
+            if (ln == null || ln.isEmpty()) ln = getLocalPart(qn);
 
             if (isNamespace(qn) && !fromFragmentHandler) {
                 // I haven't figured the reason out yet, but, in somewhere,
@@ -186,7 +189,7 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
             }
         }
 
-        if (localName == null || localName.equals("")) localName = getLocalPart(qName);
+        if (localName == null || localName.isEmpty()) localName = getLocalPart(qName);
         call("start_element_namespace",
              stringOrNil(ruby, localName),
              rubyAttr,
@@ -195,38 +198,28 @@ public class NokogiriHandler extends DefaultHandler2 implements XmlDeclHandler {
              rubyNSAttr);
         characterStack.push(new StringBuffer());
     }
-    
-    private static String[] emptyAttrs =
-        {"checked", "compact", "declare", "defer", "disabled", "ismap", "multiple", 
-         "noresize", "nohref", "noshade", "nowrap", "readonly", "selected"};
-    
-    private boolean isEmptyAttr(String name) {
-        for (String emptyAttr : emptyAttrs) {
-            if (emptyAttr.equals(name)) return true;
-        }
-        return false;
+
+    static final Set<String> EMPTY_ATTRS;
+    static {
+        final String[] emptyAttrs = {
+            "checked", "compact", "declare", "defer", "disabled", "ismap", "multiple",
+            "noresize", "nohref", "noshade", "nowrap", "readonly", "selected"
+        };
+        EMPTY_ATTRS = new HashSet<String>(Arrays.asList(emptyAttrs));
     }
     
-    public Integer getLine() {
-        return locator.getLineNumber();
+    private static boolean isEmptyAttr(String name) {
+        return EMPTY_ATTRS.contains(name);
     }
     
-    public Integer getColumn() {
-        return locator.getColumnNumber() - 1;
+    public final Integer getLine() { // -1 if none is available
+        final int line = locator.getLineNumber();
+        return line == -1 ? null : line;
     }
     
-    private boolean isFromFragmentHandler() {
-        if (object != null && object instanceof RubyObject) {
-            RubyObject rubyObj = (RubyObject)object;
-            IRubyObject document = rubyObj.getInstanceVariable("@document");
-            if (document != null) {
-                String name = document.getMetaClass().getName();
-                if ("Nokogiri::XML::FragmentHandler".equals(name)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    public final Integer getColumn() { // -1 if none is available
+        final int column = locator.getColumnNumber();
+        return column == -1 ? null : column - 1;
     }
 
     @Override
