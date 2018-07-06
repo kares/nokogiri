@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -46,8 +45,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.BasicLibraryService;
 
 /**
- * Class to provide Nokogiri. This class is used to make "require 'nokogiri'" work
- * in JRuby. Also, this class holds a Ruby type cache and allocators of Ruby types.
+ * Boots Nokogiri JRuby extension.
+ * This class is used to make "require 'nokogiri/nokogiri'" work.
+ * Also, this class holds a Ruby type cache and allocators of Ruby types.
  * 
  * @author headius
  * @author Yoko Harada <yokolet@gmail.com>
@@ -238,13 +238,13 @@ public class NokogiriService implements BasicLibraryService {
         xsltModule.defineAnnotatedMethod(XsltStylesheet.class, "register");
     }
 
-    private static ObjectAllocator ENCODING_HANDLER_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator ENCODING_HANDLER_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             return new EncodingHandler(runtime, klazz, "");
         }
     };
 
-    public static final ObjectAllocator HTML_DOCUMENT_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator HTML_DOCUMENT_ALLOCATOR = new ObjectAllocator() {
         private HtmlDocument htmlDocument = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (htmlDocument == null) htmlDocument = new HtmlDocument(runtime, klazz);
@@ -272,19 +272,17 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    private static ObjectAllocator HTML_ELEMENT_DESCRIPTION_ALLOCATOR =
-        new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new HtmlElementDescription(runtime, klazz);
-            }
-        };
+    private static final ObjectAllocator HTML_ELEMENT_DESCRIPTION_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+            return new HtmlElementDescription(runtime, klazz);
+        }
+    };
 
-    private static ObjectAllocator HTML_ENTITY_LOOKUP_ALLOCATOR =
-        new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new HtmlEntityLookup(runtime, klazz);
-            }
-        };
+    private static ObjectAllocator HTML_ENTITY_LOOKUP_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+            return new HtmlEntityLookup(runtime, klazz);
+        }
+    };
 
     public static final ObjectAllocator XML_ATTR_ALLOCATOR = new ObjectAllocator() {
         private XmlAttr xmlAttr = null;
@@ -300,7 +298,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    public static final ObjectAllocator XML_CDATA_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_CDATA_ALLOCATOR = new ObjectAllocator() {
         private XmlCdata xmlCdata = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xmlCdata == null) xmlCdata = new XmlCdata(runtime, klazz);
@@ -328,7 +326,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    public static final ObjectAllocator XML_DOCUMENT_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_DOCUMENT_ALLOCATOR = new ObjectAllocator() {
         private XmlDocument xmlDocument = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xmlDocument == null) xmlDocument = new XmlDocument(runtime, klazz);
@@ -342,7 +340,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    public static final ObjectAllocator XML_DOCUMENT_FRAGMENT_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_DOCUMENT_FRAGMENT_ALLOCATOR = new ObjectAllocator() {
         private XmlDocumentFragment xmlDocumentFragment = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xmlDocumentFragment == null) xmlDocumentFragment = new XmlDocumentFragment(runtime, klazz);
@@ -356,7 +354,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    public static final ObjectAllocator XML_DTD_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_DTD_ALLOCATOR = new ObjectAllocator() {
         private XmlDtd xmlDtd = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xmlDtd == null) xmlDtd = new XmlDtd(runtime, klazz);
@@ -384,7 +382,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
     
-    public static ObjectAllocator XML_ELEMENT_DECL_ALLOCATOR = new ObjectAllocator() {
+    public static final ObjectAllocator XML_ELEMENT_DECL_ALLOCATOR = new ObjectAllocator() {
         private XmlElementDecl xmlElementDecl = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xmlElementDecl == null) xmlElementDecl = new XmlElementDecl(runtime, klazz);
@@ -398,7 +396,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    public static ObjectAllocator XML_ENTITY_REFERENCE_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_ENTITY_REFERENCE_ALLOCATOR = new ObjectAllocator() {
         private XmlEntityReference xmlEntityRef = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xmlEntityRef == null) xmlEntityRef = new XmlEntityReference(runtime, klazz);
@@ -454,7 +452,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
     
-    public static ObjectAllocator XML_PROCESSING_INSTRUCTION_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_PROCESSING_INSTRUCTION_ALLOCATOR = new ObjectAllocator() {
         private XmlProcessingInstruction xmlProcessingInstruction = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xmlProcessingInstruction == null) xmlProcessingInstruction = new XmlProcessingInstruction(runtime, klazz);
@@ -468,7 +466,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    public static ObjectAllocator XML_READER_ALLOCATOR = new ObjectAllocator() {
+    public static final ObjectAllocator XML_READER_ALLOCATOR = new ObjectAllocator() {
         private XmlReader xmlReader = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xmlReader == null) xmlReader = new XmlReader(runtime, klazz);
@@ -483,19 +481,19 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    private static ObjectAllocator XML_ATTRIBUTE_DECL_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_ATTRIBUTE_DECL_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             return new XmlAttributeDecl(runtime, klazz);
         }
     };
 
-    private static ObjectAllocator XML_ENTITY_DECL_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_ENTITY_DECL_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             return new XmlEntityDecl(runtime, klazz);
         }
     };
 
-    private static ObjectAllocator XML_ELEMENT_CONTENT_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XML_ELEMENT_CONTENT_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             throw runtime.newNotImplementedError("not implemented");
         }
@@ -581,7 +579,7 @@ public class NokogiriService implements BasicLibraryService {
         }
     };
 
-    public static ObjectAllocator XSLT_STYLESHEET_ALLOCATOR = new ObjectAllocator() {
+    private static final ObjectAllocator XSLT_STYLESHEET_ALLOCATOR = new ObjectAllocator() {
         private XsltStylesheet xsltStylesheet = null;
         public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
             if (xsltStylesheet == null) xsltStylesheet = new XsltStylesheet(runtime, klazz);

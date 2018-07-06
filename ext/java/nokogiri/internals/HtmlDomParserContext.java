@@ -49,6 +49,7 @@ import org.cyberneko.html.HTMLConfiguration;
 import org.cyberneko.html.filters.DefaultFilter;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.w3c.dom.Document;
@@ -125,16 +126,16 @@ public class HtmlDomParserContext extends XmlDomParserContext {
 
     @Override
     protected XmlDocument wrapDocument(ThreadContext context, RubyClass klazz, Document document) {
-        HtmlDocument htmlDocument = (HtmlDocument) NokogiriService.HTML_DOCUMENT_ALLOCATOR.allocate(context.getRuntime(), klazz);
+        HtmlDocument htmlDocument = (HtmlDocument) klazz.newInstance(context, Block.NULL_BLOCK);
         htmlDocument.setDocumentNode(context, document);
-        if (ruby_encoding.isNil()) {
+        if (ruby_encoding == context.nil) {
             // ruby_encoding might have detected by HtmlDocument::EncodingReader
             if (detected_encoding != null && !detected_encoding.isNil()) {
                 ruby_encoding = detected_encoding;
             } else {
                 // no encoding given & no encoding detected, then try to get it
                 String charset = tryGetCharsetFromHtml5MetaTag(document);
-                ruby_encoding = stringOrNil(context.getRuntime(), charset);
+                ruby_encoding = stringOrNil(context.runtime, charset);
             }
         }
         htmlDocument.setEncoding(ruby_encoding);

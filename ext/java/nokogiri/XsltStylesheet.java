@@ -70,6 +70,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.w3c.dom.Document;
@@ -156,8 +157,7 @@ public class XsltStylesheet extends RubyObject {
         
         Document doc = ((XmlDocument) xmlDoc.dup_implementation(context, true)).getDocument();
 
-        XsltStylesheet xslt =
-            (XsltStylesheet) NokogiriService.XSLT_STYLESHEET_ALLOCATOR.allocate(runtime, (RubyClass)klazz);
+        XsltStylesheet xslt = new XsltStylesheet(runtime, (RubyClass)klazz);
 
         try {
             xslt.init(args[1], doc);
@@ -177,11 +177,8 @@ public class XsltStylesheet extends RubyObject {
     }
     
     private static void ensureFirstArgIsDocument(Ruby runtime, IRubyObject arg) {
-        if (arg instanceof XmlDocument) {
-            return;
-        } else {
-            throw runtime.newArgumentError("doc must be a Nokogiri::XML::Document instance");
-        }
+        if (arg instanceof XmlDocument) return;
+        throw runtime.newArgumentError("doc must be a Nokogiri::XML::Document instance");
     }
     
     private static void ensureDocumentHasNoError(ThreadContext context, XmlDocument xmlDoc) {
@@ -235,10 +232,9 @@ public class XsltStylesheet extends RubyObject {
         }
 
         if (stringResult == null) {
-            return createDocumentFromDomResult(context, runtime, result);
-        } else {
-            return createDocumentFromString(context, runtime, stringResult);
+            return createDocumentFromDomResult(context, result);
         }
+        return createDocumentFromString(context, runtime, stringResult);
     }
     
     private DOMResult tryXsltTransformation(ThreadContext context, IRubyObject[] args, DOMSource domSource, NokogiriXsltErrorListener elistener) throws TransformerException {
@@ -290,16 +286,17 @@ public class XsltStylesheet extends RubyObject {
         return builder.toString();
     }
     
-    private IRubyObject createDocumentFromDomResult(ThreadContext context, Ruby runtime, DOMResult domResult) {
+    private static IRubyObject createDocumentFromDomResult(ThreadContext context, DOMResult domResult) {
+        RubyClass clazz;
         if ("html".equals(domResult.getNode().getFirstChild().getNodeName())) {
-            HtmlDocument htmlDocument = (HtmlDocument) getNokogiriClass(runtime, "Nokogiri::HTML::Document").allocate();
-            htmlDocument.setDocumentNode(context, (Document) domResult.getNode());
-            return htmlDocument;
+            clazz = getNokogiriClass(context.runtime, "Nokogiri::HTML::Document");
         } else {
-            XmlDocument xmlDocument = (XmlDocument) NokogiriService.XML_DOCUMENT_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Document"));
-            xmlDocument.setDocumentNode(context, (Document) domResult.getNode());
-            return xmlDocument;
+            clazz = getNokogiriClass(context.runtime, "Nokogiri::XML::Document");
         }
+
+        XmlDocument document = (XmlDocument) clazz.newInstance(context, Block.NULL_BLOCK);
+        document.setDocumentNode(context, domResult.getNode());
+        return document;
     }
     
     private Templates getTemplatesFromStreamSource() throws TransformerConfigurationException {

@@ -47,6 +47,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import static nokogiri.internals.NokogiriHelpers.getNokogiriClass;
+
 /**
  * Class for Nokogiri::HTML::Document.
  *
@@ -61,29 +63,29 @@ public class HtmlDocument extends XmlDocument {
 
     private String parsed_encoding = null;
 
-    public HtmlDocument(Ruby ruby, RubyClass klazz) {
-        super(ruby, klazz);
-    }
-    
-    public HtmlDocument(Ruby ruby, RubyClass klazz, Document doc) {
-        super(ruby, klazz, doc);
+    public HtmlDocument(Ruby runtime, RubyClass klazz) {
+        super(runtime, klazz);
     }
 
-    @JRubyMethod(name="new", meta = true, rest = true, required=0)
-    public static IRubyObject rbNew(ThreadContext context, IRubyObject klazz,
-                                    IRubyObject[] args) {
-        HtmlDocument htmlDocument;
+    public HtmlDocument(Ruby runtime, Document doc) {
+        this(runtime, getNokogiriClass(runtime, "Nokogiri::HTML::Document"), doc);
+    }
+
+    HtmlDocument(Ruby runtime, RubyClass klazz, Document doc) {
+        super(runtime, klazz, doc);
+    }
+
+    @JRubyMethod(name="new", meta = true, rest = true)
+    public static HtmlDocument rbNew(ThreadContext context, IRubyObject klazz, IRubyObject... args) {
+        HtmlDocument document;
         try {
-            Document docNode = createNewDocument();
-            htmlDocument = (HtmlDocument) NokogiriService.HTML_DOCUMENT_ALLOCATOR.allocate(context.getRuntime(), (RubyClass) klazz);
-            htmlDocument.setDocumentNode(context, docNode);
+            document = new HtmlDocument(context.runtime, (RubyClass) klazz);
         } catch (Exception ex) {
-            throw context.getRuntime().newRuntimeError("couldn't create document: " + ex);
+            throw context.runtime.newRuntimeError("couldn't create document: " + ex);
         }
 
-        RuntimeHelpers.invoke(context, htmlDocument, "initialize", args);
-
-        return htmlDocument;
+        RuntimeHelpers.invoke(context, document, "initialize", args);
+        return document;
     }
 
     public IRubyObject getInternalSubset(ThreadContext context) {
@@ -108,26 +110,22 @@ public class HtmlDocument extends XmlDocument {
         return internalSubset;
     }
 
-    public static IRubyObject do_parse(ThreadContext context,
-                                       IRubyObject klass,
-                                       IRubyObject[] args) {
-        Ruby ruby = context.getRuntime();
-        Arity.checkArgumentCount(ruby, args, 4, 4);
-        HtmlDomParserContext ctx =
-            new HtmlDomParserContext(ruby, args[2], args[3]);
+    public static IRubyObject do_parse(ThreadContext context, RubyClass klass, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+        Arity.checkArgumentCount(runtime, args, 4, 4);
+        HtmlDomParserContext ctx = new HtmlDomParserContext(runtime, args[2], args[3]);
         ctx.setInputSource(context, args[0], args[1]);
         return ctx.parse(context, klass, args[1]);
     }
     
     public void setDocumentNode(ThreadContext context, Node node) {
         super.setNode(context, node);
-        Ruby runtime = context.getRuntime();
         if (node != null) {
             Document document = (Document)node;
             document.normalize();
             stabilzeAttrValue(document.getDocumentElement());
         }
-        setInstanceVariable("@decorators", runtime.getNil());
+        setInstanceVariable("@decorators", context.nil);
     }
     
     private void stabilzeAttrValue(Node node) {
@@ -167,10 +165,8 @@ public class HtmlDocument extends XmlDocument {
      * and +options+.  See Nokogiri::HTML.parse
      */
     @JRubyMethod(meta = true, rest = true)
-    public static IRubyObject read_io(ThreadContext context,
-                                      IRubyObject cls,
-                                      IRubyObject[] args) {
-        return do_parse(context, cls, args);
+    public static IRubyObject read_io(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
+        return do_parse(context, (RubyClass) klass, args);
     }
 
     /*
@@ -181,9 +177,8 @@ public class HtmlDocument extends XmlDocument {
      * and +options+.  See Nokogiri::HTML.parse
      */
     @JRubyMethod(meta = true, rest = true)
-    public static IRubyObject read_memory(ThreadContext context,
-                                          IRubyObject cls,
-                                          IRubyObject[] args) {
-        return do_parse(context, cls, args);
+    public static IRubyObject read_memory(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
+        return do_parse(context, (RubyClass) klass, args);
     }
+
 }

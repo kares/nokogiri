@@ -44,20 +44,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import nokogiri.HtmlDocument;
-import nokogiri.NokogiriService;
-import nokogiri.XmlAttr;
-import nokogiri.XmlCdata;
-import nokogiri.XmlComment;
-import nokogiri.XmlDocument;
-import nokogiri.XmlDtd;
-import nokogiri.XmlElement;
-import nokogiri.XmlEntityReference;
-import nokogiri.XmlNamespace;
-import nokogiri.XmlNode;
-import nokogiri.XmlProcessingInstruction;
-import nokogiri.XmlText;
-import nokogiri.XmlXpathContext;
+import nokogiri.*;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -111,7 +98,7 @@ public class NokogiriHelpers {
      * value.
      */
     public static IRubyObject getCachedNodeOrCreate(Ruby ruby, Node node) {
-        if(node == null) return ruby.getNil();
+        if (node == null) return ruby.getNil();
         if (node.getNodeType() == Node.ATTRIBUTE_NODE && isNamespace(node.getNodeName())) {
             XmlDocument xmlDocument = (XmlDocument)node.getOwnerDocument().getUserData(CACHED_NODE);
             if (!(xmlDocument instanceof HtmlDocument)) {
@@ -124,8 +111,8 @@ public class NokogiriHelpers {
             }
         }
         XmlNode xmlNode = getCachedNode(node);
-        if(xmlNode == null) {
-            xmlNode = (XmlNode)constructNode(ruby, node);
+        if (xmlNode == null) {
+            xmlNode = (XmlNode) constructNode(ruby, node);
             node.setUserData(CACHED_NODE, xmlNode, null);
         }
         return xmlNode;
@@ -138,50 +125,29 @@ public class NokogiriHelpers {
      */
     public static IRubyObject constructNode(Ruby runtime, Node node) {
         if (node == null) return runtime.getNil();
-        // this is slow; need a way to cache nokogiri classes/modules somewhere
         switch (node.getNodeType()) {
             case Node.ELEMENT_NODE:
-                XmlElement xmlElement = (XmlElement) NokogiriService.XML_ELEMENT_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Element"));
-                xmlElement.setNode(runtime.getCurrentContext(), node);
-                return xmlElement;
+                return new XmlElement(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Element"), node);
             case Node.ATTRIBUTE_NODE:
-                XmlAttr xmlAttr = (XmlAttr) NokogiriService.XML_ATTR_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Attr"));
-                xmlAttr.setNode(runtime.getCurrentContext(), node);
-                return xmlAttr;
+                return new XmlAttr(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Attr"), node);
             case Node.TEXT_NODE:
-                XmlText xmlText = (XmlText) NokogiriService.XML_TEXT_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Text"));
-                xmlText.setNode(runtime.getCurrentContext(), node);
-                return xmlText;
+                return new XmlText(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Text"), node);
             case Node.COMMENT_NODE:
-                XmlComment xmlComment = (XmlComment) NokogiriService.XML_COMMENT_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Comment"));
-                xmlComment.setNode(runtime.getCurrentContext(), node);
-                return xmlComment;
+                return new XmlComment(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Comment"), node);
             case Node.ENTITY_NODE:
                 return new XmlNode(runtime, getNokogiriClass(runtime, "Nokogiri::XML::EntityDecl"), node);
             case Node.ENTITY_REFERENCE_NODE:
-                XmlEntityReference xmlEntityRef = (XmlEntityReference) NokogiriService.XML_ENTITY_REFERENCE_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::EntityReference"));
-                xmlEntityRef.setNode(runtime.getCurrentContext(), node);
-                return xmlEntityRef;
+                return new XmlEntityReference(runtime, getNokogiriClass(runtime, "Nokogiri::XML::EntityReference"), node);
             case Node.PROCESSING_INSTRUCTION_NODE:
-                XmlProcessingInstruction xmlProcessingInstruction = (XmlProcessingInstruction) NokogiriService.XML_PROCESSING_INSTRUCTION_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::ProcessingInstruction"));
-                xmlProcessingInstruction.setNode(runtime.getCurrentContext(), node);
-                return xmlProcessingInstruction;
+                return new XmlProcessingInstruction(runtime, getNokogiriClass(runtime, "Nokogiri::XML::ProcessingInstruction"), node);
             case Node.CDATA_SECTION_NODE:
-                XmlCdata xmlCdata = (XmlCdata) NokogiriService.XML_CDATA_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::CDATA"));
-                xmlCdata.setNode(runtime.getCurrentContext(), node);
-                return xmlCdata;
+                return new XmlCdata(runtime, getNokogiriClass(runtime, "Nokogiri::XML::CDATA"), node);
             case Node.DOCUMENT_NODE:
-                XmlDocument xmlDocument = (XmlDocument) NokogiriService.XML_DOCUMENT_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Document"));
-                xmlDocument.setDocumentNode(runtime.getCurrentContext(), node);
-                return xmlDocument;
+                return new XmlDocument(runtime, (Document) node);
             case Node.DOCUMENT_TYPE_NODE:
-                XmlDtd xmlDtd = (XmlDtd) NokogiriService.XML_DTD_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
-                xmlDtd.setNode(runtime, node);
-                return xmlDtd;
+                return new XmlDtd(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"), node);
             default:
-                XmlNode xmlNode = (XmlNode) NokogiriService.XML_NODE_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Node"));
-                xmlNode.setNode(runtime.getCurrentContext(), node);
-                return xmlNode;
+                return new XmlNode(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Node"), node);
         }
     }
     
