@@ -235,10 +235,9 @@ public class XsltStylesheet extends RubyObject {
         }
 
         if (stringResult == null) {
-            return createDocumentFromDomResult(context, runtime, result);
-        } else {
-            return createDocumentFromString(context, runtime, stringResult);
+            return createDocumentFromDomResult(context, result);
         }
+        return createDocumentFromString(context, runtime, stringResult);
     }
     
     private DOMResult tryXsltTransformation(ThreadContext context, IRubyObject[] args, DOMSource domSource, NokogiriXsltErrorListener elistener) throws TransformerException {
@@ -290,15 +289,11 @@ public class XsltStylesheet extends RubyObject {
         return builder.toString();
     }
     
-    private IRubyObject createDocumentFromDomResult(ThreadContext context, Ruby runtime, DOMResult domResult) {
+    private static IRubyObject createDocumentFromDomResult(ThreadContext context, DOMResult domResult) {
         if ("html".equals(domResult.getNode().getFirstChild().getNodeName())) {
-            HtmlDocument htmlDocument = (HtmlDocument) getNokogiriClass(runtime, "Nokogiri::HTML::Document").allocate();
-            htmlDocument.setDocumentNode(context, (Document) domResult.getNode());
-            return htmlDocument;
+            return new HtmlDocument(context.runtime, (Document) domResult.getNode());
         } else {
-            XmlDocument xmlDocument = (XmlDocument) NokogiriService.XML_DOCUMENT_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Document"));
-            xmlDocument.setDocumentNode(context, (Document) domResult.getNode());
-            return xmlDocument;
+            return new XmlDocument(context.runtime, (Document) domResult.getNode());
         }
     }
     

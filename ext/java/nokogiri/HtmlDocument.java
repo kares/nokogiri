@@ -47,6 +47,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import static nokogiri.internals.NokogiriHelpers.getNokogiriClass;
+
 /**
  * Class for Nokogiri::HTML::Document.
  *
@@ -61,24 +63,27 @@ public class HtmlDocument extends XmlDocument {
 
     private String parsed_encoding = null;
 
-    public HtmlDocument(Ruby ruby, RubyClass klazz) {
-        super(ruby, klazz);
-    }
-    
-    public HtmlDocument(Ruby ruby, RubyClass klazz, Document doc) {
-        super(ruby, klazz, doc);
+    public HtmlDocument(Ruby runtime, RubyClass klazz) {
+        super(runtime, klazz);
     }
 
-    @JRubyMethod(name="new", meta = true, rest = true, required=0)
-    public static IRubyObject rbNew(ThreadContext context, IRubyObject klazz,
-                                    IRubyObject[] args) {
+    public HtmlDocument(Ruby runtime, Document doc) {
+        this(runtime, getNokogiriClass(runtime, "Nokogiri::HTML::Document"), doc);
+    }
+
+    public HtmlDocument(Ruby runtime, RubyClass klazz, Document doc) {
+        super(runtime, klazz, doc);
+    }
+
+    @JRubyMethod(name="new", meta = true, rest = true)
+    public static IRubyObject rbNew(ThreadContext context, IRubyObject klazz, IRubyObject[] args) {
         HtmlDocument htmlDocument;
         try {
             Document docNode = createNewDocument();
-            htmlDocument = (HtmlDocument) NokogiriService.HTML_DOCUMENT_ALLOCATOR.allocate(context.getRuntime(), (RubyClass) klazz);
+            htmlDocument = new HtmlDocument(context.runtime, (RubyClass) klazz);
             htmlDocument.setDocumentNode(context, docNode);
         } catch (Exception ex) {
-            throw context.getRuntime().newRuntimeError("couldn't create document: " + ex);
+            throw context.runtime.newRuntimeError("couldn't create document: " + ex);
         }
 
         RuntimeHelpers.invoke(context, htmlDocument, "initialize", args);

@@ -61,9 +61,8 @@ public class XmlElement extends XmlNode {
     
     @Override
     public void setNode(ThreadContext context, Node node) {
-      super.setNode(context, node);
-      if (doc != null)
-        setInstanceVariable("@document", doc);
+        super.setNode(context, node);
+        if (doc != null) setInstanceVariable("@document", doc);
     }
     
     @Override

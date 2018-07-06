@@ -197,17 +197,17 @@ public class XmlNode extends RubyObject {
      * This is the allocator for XmlNode class.  It should only be
      * called from Ruby code.
      */
-    public XmlNode(Ruby ruby, RubyClass cls) {
-        super(ruby, cls);
+    public XmlNode(Ruby runtime, RubyClass cls) {
+        super(runtime, cls);
     }
 
     /**
      * This is a constructor to create an XmlNode from an already
      * existing node.  It may be called by Java code.
      */
-    public XmlNode(Ruby ruby, RubyClass cls, Node node) {
-        super(ruby, cls);
-        setNode(ruby.getCurrentContext(), node);
+    public XmlNode(Ruby runtime, RubyClass cls, Node node) {
+        super(runtime, cls);
+        setNode(runtime.getCurrentContext(), node);
     }
 
     protected void decorate(final ThreadContext context) {
@@ -550,7 +550,7 @@ public class XmlNode extends RubyObject {
         decorate(context);
 
         if (this instanceof XmlAttr) {
-            ((XmlAttr)this).setNamespaceIfNecessary(context.getRuntime());
+            ((XmlAttr) this).setNamespaceIfNecessary(context.getRuntime());
         }
     }
 

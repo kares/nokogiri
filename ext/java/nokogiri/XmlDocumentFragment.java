@@ -96,7 +96,7 @@ public class XmlDocumentFragment extends XmlNode {
             }
         }
 
-        XmlDocumentFragment fragment = (XmlDocumentFragment) NokogiriService.XML_DOCUMENT_FRAGMENT_ALLOCATOR.allocate(context.runtime, (RubyClass)cls);
+        XmlDocumentFragment fragment = new XmlDocumentFragment(context.runtime, (RubyClass) cls);
         fragment.setDocument(context, doc);
         fragment.setNode(context, doc.getDocument().createDocumentFragment());
 

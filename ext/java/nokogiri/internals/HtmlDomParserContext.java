@@ -125,8 +125,7 @@ public class HtmlDomParserContext extends XmlDomParserContext {
 
     @Override
     protected XmlDocument wrapDocument(ThreadContext context, RubyClass klazz, Document document) {
-        HtmlDocument htmlDocument = (HtmlDocument) NokogiriService.HTML_DOCUMENT_ALLOCATOR.allocate(context.getRuntime(), klazz);
-        htmlDocument.setDocumentNode(context, document);
+        HtmlDocument htmlDocument = new HtmlDocument(context.runtime, klazz, document);
         if (ruby_encoding.isNil()) {
             // ruby_encoding might have detected by HtmlDocument::EncodingReader
             if (detected_encoding != null && !detected_encoding.isNil()) {

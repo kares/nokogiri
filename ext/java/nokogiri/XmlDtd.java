@@ -141,7 +141,7 @@ public class XmlDtd extends XmlNode {
           placeholder = doc.getDoctype();
         }
         // FIXME: what if the document had a doc type, why are we here ?
-        XmlDtd dtd = (XmlDtd) NokogiriService.XML_DTD_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
+        XmlDtd dtd = new XmlDtd(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
         dtd.setNode(runtime, placeholder);
         dtd.name = name;
         dtd.pubId = external_id;
@@ -166,7 +166,7 @@ public class XmlDtd extends XmlNode {
     public static XmlDtd newFromInternalSubset(Ruby runtime, Document doc) {
         Object dtdTree_ = doc.getUserData(XmlDocument.DTD_RAW_DOCUMENT);
         if (dtdTree_ == null) {
-            XmlDtd xmlDtd = (XmlDtd) NokogiriService.XML_DTD_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
+            XmlDtd xmlDtd = new XmlDtd(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
             xmlDtd.setNode(runtime, null);
             return xmlDtd;
         }
@@ -174,13 +174,13 @@ public class XmlDtd extends XmlNode {
         Node dtdTree = (Node) dtdTree_;
         Node dtd = getInternalSubset(dtdTree);
         if (dtd == null) {
-            XmlDtd xmlDtd = (XmlDtd) NokogiriService.XML_DTD_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
+            XmlDtd xmlDtd = new XmlDtd(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
             xmlDtd.setNode(runtime, null);
             return xmlDtd;
         } else {
             // Import the node into doc so it has the correct owner document.
             dtd = doc.importNode(dtd, true);
-            XmlDtd xmlDtd = (XmlDtd) NokogiriService.XML_DTD_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
+            XmlDtd xmlDtd = new XmlDtd(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
             xmlDtd.setNode(runtime, dtd);
             return xmlDtd;
         }
@@ -201,7 +201,7 @@ public class XmlDtd extends XmlNode {
         } else {
             // Import the node into doc so it has the correct owner document.
             dtd = doc.importNode(dtd, true);
-            XmlDtd xmlDtd = (XmlDtd) NokogiriService.XML_DTD_ALLOCATOR.allocate(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
+            XmlDtd xmlDtd = new XmlDtd(runtime, getNokogiriClass(runtime, "Nokogiri::XML::DTD"));
             xmlDtd.setNode(runtime, dtd);
             return xmlDtd;
         }
