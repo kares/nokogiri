@@ -91,10 +91,10 @@ public class HtmlSaxParserContext extends XmlSaxParserContext {
                                            IRubyObject data,
                                            IRubyObject encoding) {
         HtmlSaxParserContext ctx = (HtmlSaxParserContext) NokogiriService.HTML_SAXPARSER_CONTEXT_ALLOCATOR.allocate(context.getRuntime(), (RubyClass)klazz);
-        ctx.initialize(context.getRuntime());
+        ctx.initialize(context.runtime);
         String javaEncoding = findEncoding(context, encoding);
         if (javaEncoding != null) {
-            String input = applyEncoding(rubyStringToString(data), javaEncoding);
+            String input = applyEncoding(rubyStringToString(data.convertToString()), javaEncoding);
             ByteArrayInputStream istream = new ByteArrayInputStream(input.getBytes());
             ctx.setInputSource(istream);
             ctx.getInputSource().setEncoding(javaEncoding);
@@ -154,11 +154,10 @@ public class HtmlSaxParserContext extends XmlSaxParserContext {
     private static String findEncoding(ThreadContext context, IRubyObject encoding) {
         String rubyEncoding = null;
         if (encoding instanceof RubyString) {
-            rubyEncoding = rubyStringToString(encoding);
+            rubyEncoding = rubyStringToString((RubyString) encoding);
         }
         else if (encoding instanceof RubyFixnum) {
-            int value = RubyFixnum.fix2int((RubyFixnum) encoding);
-            rubyEncoding = findName(value);
+            rubyEncoding = findName(RubyFixnum.fix2int((RubyFixnum) encoding));
         }
         if (rubyEncoding == null) return null;
         try {
