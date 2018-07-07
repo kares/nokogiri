@@ -34,7 +34,6 @@ package nokogiri.internals;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -49,7 +48,6 @@ import nokogiri.*;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -135,7 +133,7 @@ public class NokogiriHelpers {
             case Node.COMMENT_NODE:
                 return new XmlComment(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Comment"), node);
             case Node.ENTITY_NODE:
-                return new XmlNode(runtime, getNokogiriClass(runtime, "Nokogiri::XML::EntityDecl"), node);
+                return new XmlEntityDecl(runtime, getNokogiriClass(runtime, "Nokogiri::XML::EntityDecl"), node);
             case Node.ENTITY_REFERENCE_NODE:
                 return new XmlEntityReference(runtime, getNokogiriClass(runtime, "Nokogiri::XML::EntityReference"), node);
             case Node.PROCESSING_INSTRUCTION_NODE:
@@ -703,17 +701,17 @@ public class NokogiriHelpers {
       return !shouldEncode(text);
     }
 
-    public static NokogiriNamespaceCache getNamespaceCacheFormNode(Node n) {
-        XmlDocument xmlDoc = (XmlDocument)getCachedNode(n.getOwnerDocument());
+    public static NokogiriNamespaceCache getNamespaceCache(Node node) {
+        XmlDocument xmlDoc = (XmlDocument) getCachedNode(node.getOwnerDocument());
         return xmlDoc.getNamespaceCache();
     }
 
-    public static Node renameNode(Node n, String namespaceURI, String qualifiedName) throws DOMException {
-        Document doc = n.getOwnerDocument();
-        NokogiriNamespaceCache nsCache = getNamespaceCacheFormNode(n);
-        Node result = doc.renameNode(n, namespaceURI, qualifiedName);
-        if (result != n) {
-            nsCache.replaceNode(n, result);
+    public static Node renameNode(Node node, String namespaceURI, String qualifiedName) throws DOMException {
+        Document doc = node.getOwnerDocument();
+        NokogiriNamespaceCache nsCache = getNamespaceCache(node);
+        Node result = doc.renameNode(node, namespaceURI, qualifiedName);
+        if (result != node) {
+            nsCache.replaceNode(node, result);
         }
         return result;
     }

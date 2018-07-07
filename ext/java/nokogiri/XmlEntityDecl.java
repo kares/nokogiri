@@ -64,26 +64,25 @@ public class XmlEntityDecl extends XmlNode {
     private IRubyObject system_id;
     private IRubyObject content;
 
-    public XmlEntityDecl(Ruby ruby, RubyClass klass) {
-        super(ruby, klass);
-        throw ruby.newRuntimeError("node required");
+    XmlEntityDecl(Ruby runtime, RubyClass klass) {
+        super(runtime, klass);
     }
 
     /**
-     * Initialize based on an entityDecl node from a NekoDTD parsed
-     * DTD.
+     * Initialize based on an entityDecl node from a NekoDTD parsed DTD.
      */
-    public XmlEntityDecl(Ruby ruby, RubyClass klass, Node entDeclNode) {
-        super(ruby, klass, entDeclNode);
-        entityType = RubyFixnum.newFixnum(ruby, XmlEntityDecl.INTERNAL_GENERAL);
-        name = external_id = system_id = content = ruby.getNil();       
+    public XmlEntityDecl(Ruby runtime, RubyClass klass, Node entDeclNode) {
+        super(runtime, klass, entDeclNode);
+        entityType = RubyFixnum.newFixnum(runtime, XmlEntityDecl.INTERNAL_GENERAL);
+        name = external_id = system_id = content = runtime.getNil();
     }
     
-    public XmlEntityDecl(Ruby ruby, RubyClass klass, Node entDeclNode, IRubyObject[] argv) {
-        super(ruby, klass, entDeclNode);
+    public XmlEntityDecl(Ruby runtime, RubyClass klass, Node entDeclNode, IRubyObject[] argv) {
+        super(runtime, klass, entDeclNode);
         name = argv[0];
-        entityType = RubyFixnum.newFixnum(ruby, XmlEntityDecl.INTERNAL_GENERAL);
-        external_id = system_id = content = ruby.getNil(); 
+        entityType = RubyFixnum.newFixnum(runtime, XmlEntityDecl.INTERNAL_GENERAL);
+        external_id = system_id = content = runtime.getNil();
+
         if (argv.length > 1) entityType = argv[1];
         if (argv.length > 4) {
             external_id = argv[2];
@@ -92,21 +91,19 @@ public class XmlEntityDecl extends XmlNode {
         }
     }
 
-    public static IRubyObject create(ThreadContext context, Node entDeclNode) {
-        XmlEntityDecl self =
-            new XmlEntityDecl(context.getRuntime(),
-                              getNokogiriClass(context.getRuntime(), "Nokogiri::XML::EntityDecl"),
-                              entDeclNode);
-        return self;
+    static XmlEntityDecl create(ThreadContext context, Node entDeclNode) {
+        return new XmlEntityDecl(context.runtime,
+            getNokogiriClass(context.runtime, "Nokogiri::XML::EntityDecl"),
+            entDeclNode
+        );
     }
     
     // when entity is created by create_entity method
-    public static IRubyObject create(ThreadContext context, Node entDeclNode, IRubyObject[] argv) {
-        XmlEntityDecl self =
-            new XmlEntityDecl(context.getRuntime(),
-                              getNokogiriClass(context.getRuntime(), "Nokogiri::XML::EntityDecl"),
-                              entDeclNode, argv);
-        return self;
+    static XmlEntityDecl create(ThreadContext context, Node entDeclNode, IRubyObject... argv) {
+        return new XmlEntityDecl(context.runtime,
+            getNokogiriClass(context.runtime, "Nokogiri::XML::EntityDecl"),
+            entDeclNode, argv
+        );
     }
 
     /**
@@ -116,21 +113,20 @@ public class XmlEntityDecl extends XmlNode {
     @JRubyMethod
     public IRubyObject node_name(ThreadContext context) {
         IRubyObject value = getAttribute(context, "name");
-        if (value.isNil()) value = name;
+        if (value == context.nil) value = name;
         return value;
     }
 
     @Override
     @JRubyMethod(name = "node_name=")
     public IRubyObject node_name_set(ThreadContext context, IRubyObject name) {
-        throw context.getRuntime()
-            .newRuntimeError("cannot change name of DTD decl");
+        throw context.runtime.newRuntimeError("cannot change name of DTD decl");
     }
 
     @JRubyMethod
     public IRubyObject content(ThreadContext context) {
         IRubyObject value = getAttribute(context, "value");
-        if (value.isNil()) value = content;
+        if (value == context.nil) value = content;
         return value;
     }
 
@@ -143,14 +139,14 @@ public class XmlEntityDecl extends XmlNode {
     @JRubyMethod
     public IRubyObject system_id(ThreadContext context) {
         IRubyObject value = getAttribute(context, "sysid");
-        if (value.isNil()) value = system_id;
+        if (value == context.nil) value = system_id;
         return value;
     }
 
     @JRubyMethod
     public IRubyObject external_id(ThreadContext context) {
         IRubyObject value = getAttribute(context, "pubid");
-        if (value.isNil()) value = external_id;
+        if (value == context.nil) value = external_id;
         return value;
     }
 

@@ -71,7 +71,7 @@ public class XmlElement extends XmlNode {
         XmlNodeSet xmlNodeSet = (XmlNodeSet) children(context);
         if (xmlNodeSet.length() > 0) {
             RubyArray nodes = xmlNodeSet.nodes;
-            for( int i = 0; i < nodes.size(); i++ ) {
+            for ( int i = 0; i < nodes.size(); i++ ) {
                 Object item = nodes.eltInternal(i);
                 if (item instanceof XmlNode) {
                     ((XmlNode) item).accept(context, visitor);
