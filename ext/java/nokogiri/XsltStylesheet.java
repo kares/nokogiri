@@ -208,7 +208,7 @@ public class XsltStylesheet extends RubyObject {
 
         NokogiriXsltErrorListener elistener = new NokogiriXsltErrorListener();
         DOMSource domSource = new DOMSource(((XmlDocument) args[0]).getDocument());
-        final DOMResult result; String stringResult = null;
+        final DOMResult result; CharSequence stringResult = null;
         try{
             result = tryXsltTransformation(context, args, domSource, elistener); // DOMResult
             if (result.getNode().getFirstChild() == null) {
@@ -234,7 +234,7 @@ public class XsltStylesheet extends RubyObject {
         if (stringResult == null) {
             return createDocumentFromDomResult(context, result);
         }
-        return createDocumentFromString(context, runtime, stringResult);
+        return createDocumentFromString(context, stringResult);
     }
     
     private DOMResult tryXsltTransformation(ThreadContext context, IRubyObject[] args, DOMSource domSource, NokogiriXsltErrorListener elistener) throws TransformerException {
@@ -250,22 +250,22 @@ public class XsltStylesheet extends RubyObject {
         return result;
     }
     
-    private String retryXsltTransformation(ThreadContext context,
-                                           IRubyObject[] args,
-                                           DOMSource domSource,
-                                           NokogiriXsltErrorListener elistener)
-            throws TransformerException, IOException {
+    private CharSequence retryXsltTransformation(ThreadContext context, IRubyObject[] args,
+                                                 DOMSource domSource, NokogiriXsltErrorListener listener)
+        throws TransformerException, IOException {
+
         Templates templates = getTemplatesFromStreamSource();
-        Transformer transf = templates.newTransformer();
-        transf.setErrorListener(elistener);
+        Transformer transformer = templates.newTransformer();
+        transformer.setErrorListener(listener);
         if (args.length > 1) {
-            addParametersToTransformer(context, transf, args[1]);
+            addParametersToTransformer(context, transformer, args[1]);
         }
+
         PipedWriter pwriter = new PipedWriter();
         PipedReader preader = new PipedReader();
         pwriter.connect(preader);
         StreamResult result = new StreamResult(pwriter);
-        transf.transform(domSource, result);
+        transformer.transform(domSource, result);
 
         char[] cbuf = new char[1024];
         int len = preader.read(cbuf, 0, 1024);
@@ -283,7 +283,7 @@ public class XsltStylesheet extends RubyObject {
         preader.close();
         pwriter.close();
         
-        return builder.toString();
+        return builder;
     }
     
     private static IRubyObject createDocumentFromDomResult(ThreadContext context, DOMResult domResult) {
@@ -315,12 +315,13 @@ public class XsltStylesheet extends RubyObject {
         return match.find();
     }
     
-    private IRubyObject createDocumentFromString(ThreadContext context, Ruby runtime, String stringResult) {
+    private IRubyObject createDocumentFromString(ThreadContext context, CharSequence stringResult) {
+        final Ruby runtime = context.runtime;
         IRubyObject[] args = new IRubyObject[4];
-        args[0] = stringOrBlank(runtime, stringResult);
-        args[1] = runtime.getNil();  // url
-        args[2] = runtime.getNil();  // encoding
-        RubyClass parse_options = (RubyClass)runtime.getClassFromPath("Nokogiri::XML::ParseOptions");
+        args[0] = stringResult == null ? RubyString.newEmptyString(runtime) : RubyString.newString(runtime, stringResult);
+        args[1] = context.nil;  // url
+        args[2] = context.nil;  // encoding
+        RubyClass parse_options = (RubyClass) runtime.getClassFromPath("Nokogiri::XML::ParseOptions");
         if (htmlish) {
             args[3] = parse_options.getConstant("DEFAULT_HTML");
             RubyClass htmlDocumentClass = getNokogiriClass(runtime, "Nokogiri::HTML::Document");
@@ -329,7 +330,7 @@ public class XsltStylesheet extends RubyObject {
             args[3] = parse_options.getConstant("DEFAULT_XML");
             RubyClass xmlDocumentClass = getNokogiriClass(runtime, "Nokogiri::XML::Document");            
             XmlDocument xmlDocument = (XmlDocument) RuntimeHelpers.invoke(context, xmlDocumentClass, "parse", args);
-            if (((Document)xmlDocument.getNode()).getDocumentElement() == null) {
+            if (((Document) xmlDocument.getNode()).getDocumentElement() == null) {
                 RubyArray errors = (RubyArray) xmlDocument.getInstanceVariable("@errors");
                 RuntimeHelpers.invoke(context, errors, "<<", args[0]);
             }
