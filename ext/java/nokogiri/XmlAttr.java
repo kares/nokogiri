@@ -96,24 +96,27 @@ public class XmlAttr extends XmlNode {
         Node attr = xmlDoc.getDocument().createAttribute(str);
         setNode(context, attr);
     }
-    
+
+    @Override
+    public void setNode(ThreadContext context, Node node) {
+        super.setNode(context, node);
+        setNamespaceIfNecessary(context.runtime);
+    }
     
     // this method is called from XmlNode.setNode()
     // if the node is attribute, and its name has prefix "xml"
     // the default namespace should be registered for this attribute
-    void setNamespaceIfNecessary(Ruby runtime) {
+    private void setNamespaceIfNecessary(Ruby runtime) {
         if ("xml".equals(node.getPrefix())) {
-           XmlNamespace.createDefaultNamespace(runtime, node); 
+            XmlNamespace.createDefaultNamespace(runtime, node);
         }
     }
 
     private boolean isHtmlBooleanAttr() {
         String name = node.getNodeName().toLowerCase();
-
-        for(String s : HTML_BOOLEAN_ATTRS) {
-            if(s.equals(name)) return true;
+        for (String s : HTML_BOOLEAN_ATTRS) {
+            if (s.equals(name)) return true;
         }
-
         return false;
     }
 

@@ -120,10 +120,9 @@ public class XmlDocument extends XmlNode {
         setInstanceVariable("@decorators", runtime.getNil());
     }
 
-    public void setDocumentNode(ThreadContext context, Node node) {
+    protected void setDocumentNode(ThreadContext context, Node node) {
         setNode(context, node);
         if (node != null) init(context.runtime, (Document) node);
-        else initializeNamespaceCacheIfNecessary();
     }
 
     public void setEncoding(IRubyObject encoding) {
@@ -194,10 +193,11 @@ public class XmlDocument extends XmlNode {
     }
 
     public NokogiriNamespaceCache getNamespaceCache() {
+        initializeNamespaceCacheIfNecessary();
         return nsCache;
     }
 
-    public void initializeNamespaceCacheIfNecessary() {
+    private void initializeNamespaceCacheIfNecessary() {
         if (nsCache == null) nsCache = new NokogiriNamespaceCache();
     }
 

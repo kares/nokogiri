@@ -544,12 +544,7 @@ public class XmlNode extends RubyObject {
 
     public void setNode(ThreadContext context, Node node) {
         this.node = node;
-
         decorate(context);
-
-        if (this instanceof XmlAttr) {
-            ((XmlAttr) this).setNamespaceIfNecessary(context.runtime);
-        }
     }
 
     public void updateNodeNamespaceIfNecessary(ThreadContext context, XmlNamespace ns) {

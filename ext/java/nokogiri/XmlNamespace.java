@@ -111,24 +111,22 @@ public class XmlNamespace extends RubyObject {
     
     public static XmlNamespace createFromAttr(Ruby runtime, Attr attr) {
         String prefixValue = getLocalNameForNamespace(attr.getName());
+        String hrefValue = attr.getValue();
+        // check namespace cache
+        XmlDocument xmlDocument = (XmlDocument) getCachedNodeOrCreate(runtime, attr.getOwnerDocument());
+        XmlNamespace xmlNamespace = xmlDocument.getNamespaceCache().get(prefixValue, hrefValue);
+        if (xmlNamespace != null) return xmlNamespace;
+
         IRubyObject prefix_value;
         if (prefixValue == null) {
             prefix_value = runtime.getNil(); prefixValue = "";
         } else {
             prefix_value = RubyString.newString(runtime, prefixValue);
         }
-        String hrefValue = attr.getValue();
         IRubyObject href_value = RubyString.newString(runtime, hrefValue);
-        // check namespace cache
-        XmlDocument xmlDocument = (XmlDocument)getCachedNodeOrCreate(runtime, attr.getOwnerDocument());
-        xmlDocument.initializeNamespaceCacheIfNecessary();
-        XmlNamespace xmlNamespace = xmlDocument.getNamespaceCache().get(prefixValue, hrefValue);
-        if (xmlNamespace != null) return xmlNamespace;
-        
-        // creating XmlNamespace instance
+
         XmlNamespace namespace = new XmlNamespace(runtime, attr, prefix_value, prefixValue, href_value, hrefValue, xmlDocument);
-        
-        // updateing namespace cache
+        // updating namespace cache
         xmlDocument.getNamespaceCache().put(namespace, attr.getOwnerElement());
         return namespace;
     }
@@ -139,8 +137,7 @@ public class XmlNamespace extends RubyObject {
         Ruby runtime = prefix.getRuntime();
         Document document = owner.getOwnerDocument();
         // check namespace cache
-        XmlDocument xmlDocument = (XmlDocument)getCachedNodeOrCreate(runtime, document);
-        xmlDocument.initializeNamespaceCacheIfNecessary();
+        XmlDocument xmlDocument = (XmlDocument) getCachedNodeOrCreate(runtime, document);
         XmlNamespace xmlNamespace = xmlDocument.getNamespaceCache().get(prefixValue, hrefValue);
         if (xmlNamespace != null) return xmlNamespace;
 
@@ -153,7 +150,6 @@ public class XmlNamespace extends RubyObject {
         attrNode.setNodeValue(hrefValue);
 
         XmlNamespace namespace = new XmlNamespace(runtime, attrNode, prefix, prefixValue, href, hrefValue, xmlDocument);
-        
         // updating namespace cache
         xmlDocument.getNamespaceCache().put(namespace, owner);
         return namespace;
@@ -165,7 +161,7 @@ public class XmlNamespace extends RubyObject {
         String hrefValue = owner.getNamespaceURI();
         Document document = owner.getOwnerDocument();
         // check namespace cache
-        XmlDocument xmlDocument = (XmlDocument)getCachedNodeOrCreate(runtime, document);
+        XmlDocument xmlDocument = (XmlDocument) getCachedNodeOrCreate(runtime, document);
         XmlNamespace xmlNamespace = xmlDocument.getNamespaceCache().get(prefixValue, hrefValue);
         if (xmlNamespace != null) return xmlNamespace;
 

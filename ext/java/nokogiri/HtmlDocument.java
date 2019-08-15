@@ -117,11 +117,12 @@ public class HtmlDocument extends XmlDocument {
         ctx.setInputSource(context, args[0], args[1]);
         return ctx.parse(context, klass, args[1]);
     }
-    
-    public void setDocumentNode(ThreadContext context, Node node) {
+
+    @Override
+    protected void setDocumentNode(ThreadContext context, Node node) {
         super.setNode(context, node);
         if (node != null) {
-            Document document = (Document)node;
+            Document document = (Document) node;
             document.normalize();
             stabilzeAttrValue(document.getDocumentElement());
         }
