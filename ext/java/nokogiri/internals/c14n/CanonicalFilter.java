@@ -18,18 +18,18 @@ public class CanonicalFilter {
     }
 
     public boolean includeNodes(Node currentNode, Node parentNode) {
-        if (block == null || !block.isGiven())
-            return true;
+        if (block == null || !block.isGiven()) return true;
 
-        IRubyObject current = NokogiriHelpers.getCachedNodeOrCreate(context.getRuntime(), currentNode);
-        IRubyObject parent = NokogiriHelpers.getCachedNodeOrCreate(context.getRuntime(), parentNode);
+        IRubyObject current = NokogiriHelpers.getCachedNodeOrCreate(context.runtime, currentNode);
 
-        if (parent.isNil()) {
+        if (parentNode == null) {
             IRubyObject doc = ((XmlNode) current).document(context);
             boolean returnValue = block.call(context, current, doc).isTrue();
             block.call(context, doc, context.nil);
             return returnValue;
         }
+
+        IRubyObject parent = NokogiriHelpers.getCachedNodeOrCreate(context.runtime, parentNode);
 
         return block.call(context, current, parent).isTrue();
     }

@@ -92,7 +92,7 @@ public class XmlText extends XmlNode {
         visitor.enter((Text)node);
         Node child = node.getFirstChild();
         while (child != null) {
-            IRubyObject nokoNode = getCachedNodeOrCreate(context.getRuntime(), child);
+            IRubyObject nokoNode = getCachedNodeOrCreate(context.runtime, child);
             if (nokoNode instanceof XmlNode) {
                 XmlNode cur = (XmlNode) nokoNode;
                 cur.accept(context, visitor);

@@ -45,10 +45,7 @@ import java.util.regex.Pattern;
 
 import nokogiri.*;
 
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyClass;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -75,6 +72,10 @@ public class NokogiriHelpers {
         return (XmlNode) node.getUserData(CACHED_NODE);
     }
 
+    public static Object setCachedNode(Node node, XmlNode xmlNode) {
+        return node.setUserData(CACHED_NODE, xmlNode, null);
+    }
+
     public static void clearCachedNode(Node node) {
         node.setUserData(CACHED_NODE, null, null);
     }
@@ -90,28 +91,27 @@ public class NokogiriHelpers {
     }
 
     /**
-     * Get the XmlNode associated with the underlying
-     * <code>node</code>. Creates a new XmlNode (or appropriate subclass)
-     * or XmlNamespace wrapping <code>node</code> if there is no cached
-     * value.
+     * Get the XmlNode associated with the underlying <code>node</code>.
+     * Creates a new XmlNode (or appropriate subclass) or XmlNamespace
+     * wrapping <code>node</code> if there is no cached value.
      */
-    public static IRubyObject getCachedNodeOrCreate(Ruby ruby, Node node) {
-        if (node == null) return ruby.getNil();
+    public static RubyObject getCachedNodeOrCreate(Ruby runtime, Node node) {
+        // if (node == null) return runtime.getNil();
         if (node.getNodeType() == Node.ATTRIBUTE_NODE && isNamespace(node.getNodeName())) {
-            XmlDocument xmlDocument = (XmlDocument)node.getOwnerDocument().getUserData(CACHED_NODE);
-            if (!(xmlDocument instanceof HtmlDocument)) {
-                String prefix = getLocalNameForNamespace(((Attr)node).getName());
+            XmlDocument xmlDocument = (XmlDocument) getCachedNode(node.getOwnerDocument());
+            if (xmlDocument != null && !(xmlDocument instanceof HtmlDocument)) {
+                String prefix = getLocalNameForNamespace(((Attr) node).getName());
                 prefix = prefix != null ? prefix : "";
-                String href = ((Attr)node).getValue();
+                String href = ((Attr) node).getValue();
                 XmlNamespace xmlNamespace = xmlDocument.getNamespaceCache().get(prefix, href);
                 if (xmlNamespace != null) return xmlNamespace;
-                else return XmlNamespace.createFromAttr(ruby, (Attr)node);
+                return XmlNamespace.createFromAttr(runtime, (Attr) node);
             }
         }
         XmlNode xmlNode = getCachedNode(node);
         if (xmlNode == null) {
-            xmlNode = (XmlNode) constructNode(ruby, node);
-            node.setUserData(CACHED_NODE, xmlNode, null);
+            xmlNode = constructNode(runtime, node);
+            setCachedNode(node, xmlNode);
         }
         return xmlNode;
     }
@@ -121,8 +121,7 @@ public class NokogiriHelpers {
      * subclass of XmlNode is chosen based on the type of
      * <code>node</code>.
      */
-    public static IRubyObject constructNode(Ruby runtime, Node node) {
-        if (node == null) return runtime.getNil();
+    public static XmlNode constructNode(Ruby runtime, Node node) {
         switch (node.getNodeType()) {
             case Node.ELEMENT_NODE:
                 return new XmlElement(runtime, getNokogiriClass(runtime, "Nokogiri::XML::Element"), node);
@@ -556,7 +555,7 @@ public class NokogiriHelpers {
 
     public static RubyArray nodeListToRubyArray(Ruby ruby, NodeList nodes, RubyArray array) {
         for(int i = 0; i < nodes.getLength(); i++) {
-            array.append(NokogiriHelpers.getCachedNodeOrCreate(ruby, nodes.item(i)));
+            array.append(getCachedNodeOrCreate(ruby, nodes.item(i)));
         }
         return array;
     }
@@ -564,7 +563,7 @@ public class NokogiriHelpers {
     public static RubyArray nodeArrayToRubyArray(Ruby ruby, Node[] nodes) {
         RubyArray n = RubyArray.newArray(ruby, nodes.length);
         for(int i = 0; i < nodes.length; i++) {
-            n.append(NokogiriHelpers.getCachedNodeOrCreate(ruby, nodes[i]));
+            n.append(getCachedNodeOrCreate(ruby, nodes[i]));
         }
         return n;
     }
@@ -572,7 +571,7 @@ public class NokogiriHelpers {
     public static RubyArray namedNodeMapToRubyArray(Ruby ruby, NamedNodeMap map) {
         RubyArray n = RubyArray.newArray(ruby, map.getLength());
         for(int i = 0; i < map.getLength(); i++) {
-            n.append(NokogiriHelpers.getCachedNodeOrCreate(ruby, map.item(i)));
+            n.append(getCachedNodeOrCreate(ruby, map.item(i)));
         }
         return n;
     }

@@ -233,7 +233,7 @@ public class XmlNode extends RubyObject {
     }
 
     protected void resetCache() {
-        node.setUserData(NokogiriHelpers.CACHED_NODE, this, null);
+        NokogiriHelpers.setCachedNode(node, this);
     }
 
     /**
@@ -900,11 +900,7 @@ public class XmlNode extends RubyObject {
 
     IRubyObject document(final Ruby runtime) {
         if (doc == null) {
-            doc = (XmlDocument) node.getOwnerDocument().getUserData(NokogiriHelpers.CACHED_NODE);
-            if (doc == null) {
-                doc = getCachedNodeOrCreate(runtime, node.getOwnerDocument());
-                node.getOwnerDocument().setUserData(NokogiriHelpers.CACHED_NODE, doc, null);
-            }
+            doc = getCachedNodeOrCreate(runtime, node.getOwnerDocument());
         }
         return doc;
     }
@@ -1277,9 +1273,8 @@ public class XmlNode extends RubyObject {
         if (node instanceof Element) {
             setAttribute(context, rubyStringToString(rbkey), rubyStringToString(rbval));
             return this;
-        } else {
-            return rbval;
         }
+        return rbval;
     }
 
     private void setAttribute(ThreadContext context, String key, String val) {

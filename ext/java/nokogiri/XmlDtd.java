@@ -442,8 +442,7 @@ public class XmlDtd extends XmlNode {
                 entities.op_aset(context, decl.node_name(context), decl);
                 allDecls.append(decl);
             } else if (isNotationDecl(node)) {
-                XmlNode tmp = (XmlNode)
-                    NokogiriHelpers.constructNode(context.getRuntime(), node);
+                XmlNode tmp = NokogiriHelpers.constructNode(context.runtime, node);
                 IRubyObject decl = invoke(context, notationClass, "new",
                                           tmp.getAttribute(context, "name"),
                                           tmp.getAttribute(context, "pubid"),
