@@ -1,0 +1,37 @@
+language: ruby
+dist: trusty
+sudo: required
+
+script: bundle exec rake compile test
+
+matrix:
+  include:
+    - os: linux
+      rvm: 2.3.8
+    - os: osx
+      rvm: 2.4.6
+    - os: linux
+      rvm: 2.5.6
+      env:
+        - RUBYOPT="--enable-frozen-string-literal --debug=frozen-string-literal"
+    - os: linux
+      rvm: 2.6.4
+      env:
+        - RUBYOPT="--enable-frozen-string-literal --debug=frozen-string-literal"
+    - os: linux
+      rvm: ruby-head
+      env:
+        - RUBYOPT="--enable-frozen-string-literal --debug=frozen-string-literal"
+    - os: linux
+      rvm: jruby-9.2.8.0
+      jdk: openjdk8
+    - os: linux
+      rvm: jruby-9.1.17.0
+      jdk: openjdk7
+    - os: linux
+      rvm: jruby-head
+      jdk: openjdk8
+  allow_failures:
+    - rvm: ruby-head
+    - rvm: jruby-head
+  fast_finish: true
